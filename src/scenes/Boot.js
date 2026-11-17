@@ -6,6 +6,11 @@ export class Boot extends Scene {
     super('Boot');
   }
 
+  preload() {
+    this.load.image('naac', 'assets/naac.webp');
+    this.load.image('ugc', 'assets/ugc.webp');
+  }
+
   create() {
     makeTextures(this);
     this.scene.start('Background');

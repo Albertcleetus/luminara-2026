@@ -29,6 +29,37 @@ export function makeTextures(scene) {
     c.fillRect(0, 0, 48, 48);
   });
 
+  // Darker edges for the finale so lights and fireworks pop.
+  canvas('vignette', 1920, 1080, (c, w, h) => {
+    const g = c.createRadialGradient(960, 520, 300, 960, 520, 1150);
+    g.addColorStop(0, 'rgba(29,43,79,0)');
+    g.addColorStop(0.55, 'rgba(29,43,79,0.18)');
+    g.addColorStop(1, 'rgba(20,24,48,0.62)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+  });
+
+  // Stage spotlight cone: narrow at the bottom, wide and fading at the top.
+  canvas('beam', 520, 1400, (c, w, h) => {
+    const g = c.createLinearGradient(0, h, 0, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0.85)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.25)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(w / 2 - 14, h);
+    c.lineTo(w / 2 + 14, h);
+    c.lineTo(w, 0);
+    c.lineTo(0, 0);
+    c.closePath();
+    c.fill();
+  });
+
+  canvas('confetti', 12, 22, (c, w, h) => {
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, w, h);
+  });
+
   canvas('circle', 512, 512, (c) => {
     c.fillStyle = '#fff';
     c.beginPath();

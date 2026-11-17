@@ -15,33 +15,41 @@ export class Intro extends Scene {
     this.cameras.main.fadeIn(400, 251, 246, 242);
 
     // Red ring sweeping in around the logo (poster) inside thin HUD rings (tech).
-    const rings = makeRings(this, 960, 330, { radius: 330, alpha: 0 });
+    // Ring group centre. Outer HUD ring reaches ~RC-296, so it stays fully on screen.
+    const RC = 355;
+    const rings = makeRings(this, 960, RC, { radius: 280, alpha: 0 });
     rings.c.setScale(0.6);
     this.tweens.add({ targets: rings.c, alpha: 1, scale: 1, duration: 1200, delay: 300, ease: 'Cubic.easeOut' });
 
-    const ring = this.add.image(960, 330, 'ring').setTint(COLORS.red).setScale(3).setAlpha(0);
-    this.tweens.add({ targets: ring, scale: 1.1, alpha: 0.9, duration: 1200, ease: 'Cubic.easeOut' });
+    const ring = this.add.image(960, RC, 'ring').setTint(COLORS.red).setScale(3).setAlpha(0);
+    this.tweens.add({ targets: ring, scale: 0.98, alpha: 0.9, duration: 1200, ease: 'Cubic.easeOut' });
     this.tweens.add({ targets: ring, angle: 40, duration: 8000 });
 
-    const dotL = this.add.image(-200, 540, 'circle').setTint(COLORS.red).setScale(0.22).setAlpha(0.9);
-    const dotR = this.add.image(2120, 120, 'circle').setTint(COLORS.red).setScale(0.14).setAlpha(0.9);
-    this.tweens.add({ targets: dotL, x: 700, duration: 1300, delay: 400, ease: 'Back.easeOut' });
-    this.tweens.add({ targets: dotR, x: 1230, duration: 1300, delay: 550, ease: 'Back.easeOut' });
+    const dotL = this.add.image(-200, RC + 190, 'circle').setTint(COLORS.red).setScale(0.2).setAlpha(0.9);
+    const dotR = this.add.image(2120, RC - 190, 'circle').setTint(COLORS.red).setScale(0.13).setAlpha(0.9);
+    this.tweens.add({ targets: dotL, x: 740, duration: 1300, delay: 400, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: dotR, x: 1185, duration: 1300, delay: 550, ease: 'Back.easeOut' });
 
-    const logo = addLogo(this, 960, 300, 0.95).setAlpha(0);
-    logo.setScale(0.8);
-    this.tweens.add({ targets: logo, alpha: 1, scale: 0.95, duration: 800, delay: 500, ease: 'Back.easeOut' });
+    // Logo sits well inside the red ring (its inner edge is ~205 px from the centre).
+    const logo = addLogo(this, 960, RC - 40, 0.8).setAlpha(0);
+    logo.setScale(0.65);
+    this.tweens.add({ targets: logo, alpha: 1, scale: 0.8, duration: 800, delay: 500, ease: 'Back.easeOut' });
 
-    const series = addText(this, 960, 690, EVENT.series, { font: 'head', size: 36, weight: '500', color: CSS.navy, spacing: 3 }).setAlpha(0);
-    this.tweens.add({ targets: series, alpha: 1, y: 660, duration: 700, delay: 1500, ease: 'Cubic.easeOut' });
+    const series = addText(this, 960, 720, EVENT.series, { font: 'head', size: 36, weight: '500', color: CSS.navy, spacing: 3 }).setAlpha(0);
+    this.tweens.add({ targets: series, alpha: 1, y: 690, duration: 700, delay: 1500, ease: 'Cubic.easeOut' });
 
-    const rule = this.add.rectangle(960, 712, 640, 4, COLORS.red).setScale(0, 1);
+    const rule = this.add.rectangle(960, 740, 640, 4, COLORS.red).setScale(0, 1);
     this.tweens.add({ targets: rule, scaleX: 1, duration: 600, delay: 2100, ease: 'Cubic.easeOut' });
 
-    const line1 = addText(this, 960, 800, '', { font: 'head', size: 84, weight: 'bold', color: CSS.red, spacing: 2 });
-    const line2 = addText(this, 960, 900, '', { font: 'head', size: 84, weight: 'bold', color: CSS.navy, spacing: 2 });
-    scramble(this, line1, 'REIMAGINING EDUCATION', { delay: 2500, duration: 800, onTick: (n) => n % 2 === 0 && sfx.tick() });
-    scramble(this, line2, 'FOR A FUTURE-READY KERALA', { delay: 3200, duration: 900, onTick: (n) => n % 2 === 0 && sfx.tick() });
+    // Only the short title here; the full tagline is saved for the reveal.
+    const title = addText(this, 960, 865, '', { font: 'head', size: 110, weight: 'bold', color: CSS.red, spacing: 6 });
+    scramble(this, title, EVENT.subtitle, {
+      delay: 2500, duration: 900, onTick: (n) => n % 2 === 0 && sfx.tick(),
+      onDone: () => {
+        sfx.thump(0);
+        this.tweens.add({ targets: title, scale: 1.06, duration: 120, yoyo: true });
+      }
+    });
 
     // Small loading bar (tech accent) that also shows the intro's progress.
     const DURATION = 6800;

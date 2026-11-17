@@ -35,12 +35,12 @@ export const toCss = (n) => '#' + n.toString(16).padStart(6, '0');
 
 // The six keywords, revealed in this order (clockwise from the top tile).
 export const KEYWORDS = [
-  { word: 'VISION', line: 'Seeing beyond today to shape the classrooms of tomorrow.', color: 0xe3262e },
-  { word: 'INNOVATION', line: 'New ideas, new methods, and the courage to try them.', color: 0xf39200 },
-  { word: 'SKILLS', line: 'Learning that turns knowledge into real-world ability.', color: 0x1a9aa8 },
-  { word: 'TECHNOLOGY', line: 'Digital tools and AI as partners in every classroom.', color: 0x2e5aac },
-  { word: 'INCLUSION', line: 'Quality education within reach of every learner in Kerala.', color: 0xc2185b },
-  { word: 'EXCELLENCE', line: 'Raising the bar in teaching, research and character.', color: 0x6a3fa0 }
+  { word: 'POLICY', line: 'Forward-looking education policy that shapes how Kerala learns.', color: 0xe3262e },
+  { word: 'COMPETENCY', line: 'Real competence – knowledge, skills and attitude – in every learner.', color: 0xf39200 },
+  { word: 'EMPLOYABILITY', line: 'Preparing graduates for meaningful careers in a changing world of work.', color: 0x1a9aa8 },
+  { word: 'ENTREPRENEURSHIP', line: 'Turning ideas into ventures, and job seekers into job creators.', color: 0x2e5aac },
+  { word: 'AUTONOMY', line: 'Freedom for institutions to innovate in what and how they teach.', color: 0xc2185b },
+  { word: 'MIGRATION', line: 'Creating world-class opportunities at home, so talent can thrive in Kerala.', color: 0x6a3fa0 }
 ];
 
 export const EVENT = {

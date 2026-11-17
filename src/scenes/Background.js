@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS } from '../theme.js';
 import { addText, brackets } from '../ui.js';
+import { music } from '../audio.js';
 
 const FLOW = ['Attract', 'Intro', 'Honeycomb', 'Reveal'];
 
@@ -54,6 +55,7 @@ export class Background extends Scene {
   }
 
   resetFlow() {
+    music.stop(0.6);
     FLOW.forEach((key) => this.scene.stop(key));
     this.scene.launch('Attract');
   }

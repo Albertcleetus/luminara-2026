@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
 import { addLogo, addText, hexPoints, makeRings, polar } from '../ui.js';
-import { sfx } from '../audio.js';
+import { music, sfx } from '../audio.js';
 
 // Waiting screen shown before the launch starts. Tap anywhere to begin.
 export class Attract extends Scene {
@@ -45,6 +45,7 @@ export class Attract extends Scene {
     this.started = true;
     sfx.init();
     sfx.whoosh();
+    music.start(1);
     this.cameras.main.fadeOut(400, 251, 246, 242);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Intro'));
   }

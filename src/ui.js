@@ -16,6 +16,18 @@ export function addText(scene, x, y, str, opts = {}) {
   return t;
 }
 
+// Shrink a text's font size until `str` fits within maxWidth. Leaves the text empty.
+export function fitFontSize(t, str, maxWidth, baseSize) {
+  let size = baseSize;
+  t.setFontSize(size).setText(str);
+  while (t.width > maxWidth && size > 12) {
+    size -= 2;
+    t.setFontSize(size);
+  }
+  t.setText('');
+  return size;
+}
+
 // Flat-topped hexagon corner points.
 export function hexPoints(r, ox = 0, oy = 0) {
   const pts = [];
@@ -66,13 +78,18 @@ export function addLogo(scene, x, y, scale = 1) {
 
 // Decode effect: random glyphs resolve left-to-right into the final text.
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&@$/<>*+=';
+// A text that was destroyed (e.g. its popup closed early) can't be written to.
+const alive = (t) => t && t.active && t.scene;
+
 export function scramble(scene, t, final, { duration = 600, delay = 0, onDone, onTick } = {}) {
   scene.time.delayedCall(delay, () => {
+    if (!alive(t)) return;
     let elapsed = 0;
     let last = -1;
     const ev = scene.time.addEvent({
       delay: 40, loop: true,
       callback: () => {
+        if (!alive(t)) { ev.remove(); return; }
         elapsed += 40;
         const p = Math.min(1, elapsed / duration);
         const n = Math.floor(p * final.length);
@@ -97,9 +114,10 @@ export function scramble(scene, t, final, { duration = 600, delay = 0, onDone, o
 export function typeOut(scene, t, final, { speed = 30, delay = 0, onDone, onTick } = {}) {
   let i = 0;
   scene.time.delayedCall(delay, () => {
-    scene.time.addEvent({
+    const ev = scene.time.addEvent({
       delay: speed, repeat: final.length - 1,
       callback: () => {
+        if (!alive(t)) { ev.remove(); return; }
         i++;
         t.setText(final.slice(0, i));
         if (onTick) onTick(i);
