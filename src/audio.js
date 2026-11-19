@@ -23,8 +23,12 @@ function ensure() {
     ctx = new AC();
 
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14;
-    comp.ratio.value = 4;
+    // Gentle glue only: a fast, hard setting made loud hits pump (tremor) and crack.
+    comp.threshold.value = -10;
+    comp.knee.value = 14;
+    comp.ratio.value = 3;
+    comp.attack.value = 0.012;
+    comp.release.value = 0.3;
     comp.connect(ctx.destination);
 
     master = ctx.createGain();
@@ -444,6 +448,35 @@ export const music = {
     this.timer = setInterval(() => this.tick(), 25);
   },
 
+  // Centre tap: crossfade from the background track into the finale track, starting
+  // a few seconds before its drop so the drop lands exactly when LUMINARA'26 completes.
+  // Returns false if the track isn't loaded (the caller then uses the generated build-up).
+  startFinale(secondsUntilDrop) {
+    if (!ensure() || !sampleBuffers.finale) return false;
+    this.stop(1.2);
+    this.level = 7;
+    this.wanted = 'finale';
+    const t = ctx.currentTime;
+    // Lift any card ducking smoothly (no sudden jump in level).
+    trackBus.gain.cancelScheduledValues(t);
+    trackBus.gain.setValueAtTime(Math.max(trackBus.gain.value, 0.0001), t);
+    trackBus.gain.linearRampToValueAtTime(1, t + 0.9);
+    const src = playSample('finale', {
+      offset: Math.max(0, FINALE_DROP - secondsUntilDrop), loop: FINALE_LOOP,
+      fadeIn: 0.9, vol: TRACK_VOL.finale, out: trackBus
+    });
+    this.track = { key: 'finale', src };
+    this.dropAt = t + secondsUntilDrop;
+    return true;
+  },
+
+  // Seconds until the finale drop started by startFinale (null if none is pending).
+  finaleDropIn() {
+    if (!ctx || !this.dropAt || this.track?.key !== 'finale') return null;
+    const left = this.dropAt - ctx.currentTime;
+    return left > 0 ? left : null;
+  },
+
   stop(fade = 0.5) {
     if (!ctx) return;
     this.wanted = null;
@@ -680,7 +713,8 @@ export const sfx = {
   buildup(dur = 1.3) {
     if (!ensure()) return;
     // Recorded riser, positioned so its peak lands exactly on the card hit.
-    if (playSample('cardBuild', { offset: CARD_BUILD_PEAK - dur, duration: dur + 0.03, fadeOut: 0.04 })) return;
+    // Fades out right at the hit instead of overlapping it, so the two never stack up.
+    if (playSample('cardBuild', { offset: CARD_BUILD_PEAK - dur, duration: dur - 0.03, fadeOut: 0.05, vol: 0.7, fadeIn: 0.01 })) return;
     const t0 = now();
     ticks(t0, dur * 0.8, { start: 0.22, end: 0.06, vol: 0.08 });
     shepard(t0, dur, 0.06, 98);
@@ -694,7 +728,9 @@ export const sfx = {
   hit(i = 0) {
     if (!ensure()) return;
     // Recorded hit: each card gets its own one from the file.
-    if (playSample('cardHit', { offset: CARD_HITS[i % CARD_HITS.length], duration: CARD_HIT_LEN, fadeOut: 0.4 })) return;
+    // The file is mastered to full scale, so it plays lower to leave headroom (no crack),
+    // with a tiny fade-in so it never starts mid-waveform with a click.
+    if (playSample('cardHit', { offset: CARD_HITS[i % CARD_HITS.length], duration: CARD_HIT_LEN, fadeOut: 0.4, vol: 0.55, fadeIn: 0.008 })) return;
     const t = now();
     kick(t, 1);
     subDrop(t, 0.6, 85, 26, 2.2);
@@ -821,6 +857,15 @@ export const sfx = {
   // Recorded epic logo sting for the finale. It starts at its dramatic silence so
   // the letters land in that silence and its big hit lands exactly on the impact.
   // Returns true if the file played (the caller then skips the generated version).
+  // Centre tap: a short, slightly intense accent taken from the final screen's
+  // impact sound. Starts right at its hit and fades out before the music builds.
+  tapSting() {
+    if (!ensure()) return false;
+    return !!playSample('finalSting', {
+      offset: STING_HIT - 0.03, duration: 0.9, fadeOut: 0.9, vol: 0.5, fadeIn: 0.01
+    });
+  },
+
   finalSting(secondsUntilImpact) {
     if (!ensure()) return false;
     return !!playSample('finalSting', { when: secondsUntilImpact - (STING_HIT - STING_START), offset: STING_START });

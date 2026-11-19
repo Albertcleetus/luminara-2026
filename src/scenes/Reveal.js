@@ -1,9 +1,15 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
-import { addLogo, addText, brackets, circuitTraces, dotGlobe, glintBurst, makeRings, mirrorPaths, ornament } from '../ui.js';
+import { addLogo, addText, circuitTraces, dotGlobe, glintBurst, makeRings, mirrorPaths } from '../ui.js';
 import { music, sfx } from '../audio.js';
 
 const TY = 470; // title line
+
+// Letter timing: the name completes (and the impact hits) IMPACT_MS after this screen starts.
+const L_DELAY = 250;
+const L_STEP = 85;
+const L_DUR = 200;
+export const IMPACT_MS = L_DELAY + ([...EVENT.name].length - 1) * L_STEP + L_DUR + 60;
 
 // The programme-name reveal. It ends on a clean final page:
 // Naipunnya logo, LUMINARA'26, Educational Conclave + tagline, NAAC and UGC badges.
@@ -14,6 +20,12 @@ export class Reveal extends Scene {
 
   create() {
     const cam = this.cameras.main;
+    this.finaleOn = music.track?.key === 'finale';
+    this.sting = false;
+    // Lock the letters to the music: shift them so the name completes on the drop,
+    // whatever time the scene change took.
+    const dropIn = music.finaleDropIn();
+    const shift = dropIn ? Math.max(-L_DELAY, Math.min(800, dropIn * 1000 - IMPACT_MS)) : 0;
 
     // ---------- stage: darker edges + two sweeping spotlights ----------
     const vignette = this.add.image(960, 540, 'vignette').setAlpha(0);
@@ -106,25 +118,29 @@ export class Reveal extends Scene {
       t.setAlpha(0).setScale(3.2);
       this.title.add(t);
       this.tweens.add({
-        targets: t, alpha: 1, scale: 1, duration: 230, delay: 700 + k * 130, ease: 'Quad.easeIn',
+        targets: t, alpha: 1, scale: 1, duration: L_DUR, delay: L_DELAY + shift + k * L_STEP, ease: 'Quad.easeIn',
         onComplete: () => {
-          sfx.thump(k);
+          if (!this.finaleOn) sfx.thump(k); // the finale music carries this moment cleanly
           this.burster.explode(14, 960 + t.x, TY + 60);
           cam.shake(90, 0.003);
         }
       });
     });
-    const landed = 700 + (letters.length - 1) * 130 + 230;
+    const landed = IMPACT_MS - 60 + shift;
 
     // Slow push-out of the whole shot while the name lands.
     cam.setZoom(1.12);
-    this.tweens.add({ targets: cam, zoom: 1, duration: 3800, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: cam, zoom: 1, duration: 2400, ease: 'Sine.easeOut' });
 
     // Pre-drop build under the letters, ending exactly on the impact (the "drop").
     // Recorded logo sting if available (its hit lands on the impact); otherwise the generated pre-drop.
-    this.sting = sfx.finalSting((landed + 60) / 1000);
-    const PRE_START = 300;
-    this.time.delayedCall(PRE_START, () => sfx.preDrop((landed + 60 - PRE_START) / 1000));
+    // When the finale track is already running (started on the centre tap), its drop is
+    // the impact, so no extra build-up or sting is layered on top.
+    if (!this.finaleOn) {
+      this.sting = sfx.finalSting((landed + 60) / 1000);
+      const PRE_START = 100;
+      this.time.delayedCall(PRE_START, () => sfx.preDrop((landed + 60 - PRE_START) / 1000));
+    }
     this.time.delayedCall(landed + 60, () => this.impact());
     this.time.delayedCall(landed + 500, () => this.showRest());
 
@@ -143,7 +159,9 @@ export class Reveal extends Scene {
 
   // The big hit when the last letter lands.
   impact() {
-    if (this.sting) {
+    if (this.finaleOn) {
+      // Music drop lands here by itself.
+    } else if (this.sting) {
       // The recorded sting carries the hit. The finale track starts in its quiet
       // break under the sting's tail, and its drop lands ~4.5 s after the impact.
       this.time.delayedCall(2500, () => music.start(7));
@@ -237,20 +255,11 @@ export class Reveal extends Scene {
     const series = addText(this, 960, 262, EVENT.series, { font: 'head', size: 30, weight: '500', color: CSS.navy, spacing: 2 });
     rise(logo, 800, -30);
     rise(series, 1000, -20);
-    // Gold filigree divider between the series line and the name.
-    const orn = ornament(this, 960, 312, 720).setDepth(20).setScale(0, 1);
-    this.tweens.add({ targets: orn, scaleX: 1, duration: 800, delay: 1100, ease: "Cubic.easeOut" });
 
     // Accreditation badges pop in.
     const naac = this.add.image(815, 905, 'naac').setDisplaySize(270, 270);
     const ugc = this.add.image(1100, 900, 'ugc').setDisplaySize(215, 215);
     [naac, ugc].forEach((img, k) => {
-      // Thin tech corner brackets around each badge.
-      const hud = this.add.graphics().setAlpha(0);
-      const bw = img.displayWidth + 30;
-      const bh = img.displayHeight + 20;
-      brackets(hud, img.x - bw / 2, img.y - bh / 2, bw, bh, 26, 3, COLORS.tech, 0.8);
-      this.tweens.add({ targets: hud, alpha: 1, duration: 500, delay: 1700 + k * 220 });
       const halo = this.add.image(img.x, img.y, 'glow').setTint(COLORS.gold).setScale(0).setAlpha(0.55);
       halo.setDepth(img.depth - 1);
       this.tweens.add({ targets: halo, scale: 2.1, duration: 700, delay: 1400 + k * 220, ease: 'Back.easeOut',

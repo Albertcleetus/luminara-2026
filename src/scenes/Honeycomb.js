@@ -1,7 +1,8 @@
 import * as Phaser from 'phaser';
 import { COLORS, CSS, EVENT, KEYWORDS, toCss } from '../theme.js';
-import { addLogo, addText, brackets, chamferPoints, fitFontSize, glintBurst, goldFrame, hexPoints, lightSweep, makeRings, ornament, polar, scramble, strokeArc } from '../ui.js';
+import { addLogo, addText, brackets, chamferPoints, fitFontSize, glintBurst, goldFrame, hexPoints, lightSweep, makeRings, polar, scramble, strokeArc } from '../ui.js';
 import { music, sfx } from '../audio.js';
+import { IMPACT_MS } from './Reveal.js';
 
 const R = 150;                       // hex radius (centre to corner)
 const DIST = Math.sqrt(3) * R + 16;  // centre-to-centre distance incl. gap
@@ -40,7 +41,6 @@ export class Honeycomb extends Phaser.Scene {
 
     lightSweep(this, 960, 80, 900, { every: 6000, delay: 1500, scaleY: 0.45, alpha: 0.7 });
     addText(this, 960, 80, EVENT.subtitle, { font: 'head', size: 46, weight: 'bold', color: CSS.red, spacing: 8 });
-    ornament(this, 960, 122, 520, { alpha: 0.9 });
 
     this.buildLeftPanel();
     this.buildRightPanel();
@@ -90,11 +90,15 @@ export class Honeycomb extends Phaser.Scene {
     const g = this.add.graphics();
     goldFrame(g, 120, 340, 360, 450, { alpha: 0.45, gap: 6 });
     brackets(g, 110, 330, 380, 470, 28, 3, COLORS.navy, 0.35);
-    addLogo(this, 300, 445, 0.9);
-    addText(this, 300, 575, 'LECTURE SERIES', { font: 'mono', size: 18, color: CSS.grey, spacing: 3 });
-    addText(this, 300, 670, 'MAR ANTONY CARDINAL\nPADIYARA COMMEMORATIVE\nLECTURE SERIES – V', {
-      font: 'head', size: 30, weight: '500', color: CSS.navy, spacing: 1, lineSpacing: 6
+    // Everything kept inside the gold frame (inner width ~340 px).
+    const logo = addLogo(this, 300, 440, 0.7);
+    const lw = logo.getBounds().width;
+    if (lw > 300) logo.setScale(0.7 * 300 / lw);
+    addText(this, 300, 565, 'LECTURE SERIES', { font: 'mono', size: 18, color: CSS.grey, spacing: 3 });
+    const title = addText(this, 300, 670, 'MAR ANTONY CARDINAL\nPADIYARA COMMEMORATIVE\nLECTURE SERIES – V', {
+      font: 'head', size: 28, weight: '500', color: CSS.navy, spacing: 1, lineSpacing: 8
     });
+    if (title.width > 310) title.setScale(310 / title.width);
   }
 
   buildRightPanel() {
@@ -494,9 +498,17 @@ export class Honeycomb extends Phaser.Scene {
 
   illuminate() {
     this.state = 'done';
-    const RISE = 4250; // matches the recorded final build-up
-    music.stop(0.25);
-    sfx.megaRiser(RISE / 1000);
+    const RISE = 2600; // build-up length (the recorded riser is cued to land on the flash)
+    // The final screen's music starts now and builds smoothly; its drop lands when the
+    // name completes on the next screen (flash ends at RISE + 100, then IMPACT_MS).
+    const finale = music.startFinale((RISE + 100 + IMPACT_MS) / 1000);
+    // A short, punchy accent on the tap itself, from the final screen's impact sound.
+    sfx.tapSting();
+    this.cameras.main.shake(180, 0.004);
+    if (!finale) {
+      music.stop(0.25);
+      sfx.megaRiser(RISE / 1000);
+    }
     this.hint.setText('');
     this.centerPulses.forEach((tw) => tw.stop());
     this.center.spin.timeScale = 12;
@@ -528,13 +540,13 @@ export class Honeycomb extends Phaser.Scene {
       });
     };
     let at = 200;
-    let gap = 700;
+    let gap = 480;
     while (at < RISE - 500) {
       const when = at;
       const dur = Math.max(320, gap * 0.9);
       this.tiles.forEach((t, k) => this.time.delayedCall(when + k * 40, () => comet(t, dur)));
       at += gap;
-      gap = Math.max(260, gap * 0.78);
+      gap = Math.max(200, gap * 0.78);
     }
 
     this.tiles.forEach((t) => {
@@ -551,7 +563,7 @@ export class Honeycomb extends Phaser.Scene {
     this.tweens.add({
       targets: this.flash, alpha: 1, duration: 500, delay: RISE - 400, ease: 'Sine.easeIn',
       onComplete: () => {
-        sfx.boom();
+        if (!finale) sfx.boom();
         this.scene.start('Reveal');
       }
     });

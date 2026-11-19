@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
-import { addLogo, addText, dotGlobe, lightSweep, makeRings, ornament, scramble, twinkleStars } from '../ui.js';
+import { addLogo, addText, dotGlobe, lightSweep, makeRings, scramble, twinkleStars } from '../ui.js';
 import { sfx } from '../audio.js';
 
 // ~7 second opening, then on to the honeycomb.
@@ -43,8 +43,6 @@ export class Intro extends Scene {
     const series = addText(this, 960, 720, EVENT.series, { font: 'head', size: 36, weight: '500', color: CSS.navy, spacing: 3 }).setAlpha(0);
     this.tweens.add({ targets: series, alpha: 1, y: 690, duration: 700, delay: 1500, ease: 'Cubic.easeOut' });
 
-    const rule = ornament(this, 960, 745, 680).setScale(0, 1);
-    this.tweens.add({ targets: rule, scaleX: 1, duration: 600, delay: 2100, ease: 'Cubic.easeOut' });
 
     // Gold glints around the logo ring, and a golden light behind the title.
     this.time.delayedCall(1200, () => twinkleStars(this, { x: 640, y: 80, w: 640, h: 560, every: 220, size: 0.4 }));

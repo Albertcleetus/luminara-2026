@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
-import { addLogo, addText, drawFingerprint, glintBurst, hexPoints, lightSweep, makeRings, ornament, polar, twinkleStars } from '../ui.js';
+import { addLogo, addText, drawFingerprint, glintBurst, hexPoints, lightSweep, makeRings, polar, twinkleStars } from '../ui.js';
 import { music, sfx } from '../audio.js';
 
 // Waiting screen shown before the launch starts. Tap anywhere to begin.
@@ -14,7 +14,6 @@ export class Attract extends Scene {
 
     addLogo(this, 960, 165, 1.05);
     addText(this, 960, 335, EVENT.series, { font: 'head', size: 34, weight: '500', color: CSS.navy, spacing: 2 });
-    ornament(this, 960, 385, 620);
 
     const glow = this.add.image(960, 640, 'glow').setTint(COLORS.gold).setScale(3).setAlpha(0.45);
     this.tweens.add({ targets: glow, alpha: 0.8, scale: 3.4, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
@@ -49,7 +48,6 @@ export class Attract extends Scene {
     lightSweep(this, 960, 960, 760, { every: 3600, delay: 600, scaleY: 0.5, alpha: 0.7 });
     const cta = this.cta = addText(this, 960, 960, 'TOUCH TO BEGIN', { font: 'head', size: 54, weight: 'bold', color: CSS.red, spacing: 10 });
     this.tweens.add({ targets: cta, alpha: 0.4, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    ornament(this, 960, 1012, 420, { alpha: 0.8 });
 
     this.input.on('pointerdown', () => this.begin());
     ['SPACE', 'ENTER', 'RIGHT'].forEach((k) => this.input.keyboard.on(`keydown-${k}`, () => this.begin()));
