@@ -64,12 +64,13 @@ export function brackets(g, x, y, w, h, len, width, color, alpha) {
 }
 
 // Text version of the Naipunnya logo. Swap for the real PNG when available.
-export function addLogo(scene, x, y, scale = 1) {
+// `dark: true` uses light colours for a dark background.
+export function addLogo(scene, x, y, scale = 1, { dark = false } = {}) {
   const c = scene.add.container(x, y);
-  const name = addText(scene, 0, 0, 'Naipunnya', { size: 76, weight: '600', color: CSS.teal });
-  const reg = addText(scene, name.width / 2 + 14, -26, '®', { size: 26, weight: '600', color: CSS.navy });
+  const name = addText(scene, 0, 0, 'Naipunnya', { size: 76, weight: '600', color: dark ? '#3CC8CE' : CSS.teal });
+  const reg = addText(scene, name.width / 2 + 14, -26, '®', { size: 26, weight: '600', color: dark ? '#E8ECF5' : CSS.navy });
   const star = addText(scene, 34, -62, '★', { size: 30, color: CSS.orange });
-  const tag = addText(scene, 0, 58, 'To reach the unreachable', { size: 24, color: '#3B3F4F' });
+  const tag = addText(scene, 0, 58, 'To reach the unreachable', { size: 24, color: dark ? '#CDD3E1' : '#3B3F4F' });
   const auto = addText(scene, 0, 96, '(AUTONOMOUS)', { size: 24, weight: '600', color: CSS.orange });
   c.add([name, reg, star, tag, auto]);
   c.setScale(scale);
