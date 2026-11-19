@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
-import { addLogo, addText, makeRings, scramble } from '../ui.js';
+import { addLogo, addText, dotGlobe, lightSweep, makeRings, ornament, scramble, twinkleStars } from '../ui.js';
 import { sfx } from '../audio.js';
 
 // ~7 second opening, then on to the honeycomb.
@@ -21,6 +21,11 @@ export class Intro extends Scene {
     rings.c.setScale(0.6);
     this.tweens.add({ targets: rings.c, alpha: 1, scale: 1, duration: 1200, delay: 300, ease: 'Cubic.easeOut' });
 
+    // Holographic dot globe turning behind the logo.
+    const globe = dotGlobe(this, 960, RC, 230, { alpha: 0.32, speed: 0.35 });
+    globe.g.setAlpha(0).setScale(0.4);
+    this.tweens.add({ targets: globe.g, alpha: 1, scale: 1, duration: 1400, delay: 200, ease: 'Cubic.easeOut' });
+
     const ring = this.add.image(960, RC, 'ring').setTint(COLORS.red).setScale(3).setAlpha(0);
     this.tweens.add({ targets: ring, scale: 0.98, alpha: 0.9, duration: 1200, ease: 'Cubic.easeOut' });
     this.tweens.add({ targets: ring, angle: 40, duration: 8000 });
@@ -38,8 +43,12 @@ export class Intro extends Scene {
     const series = addText(this, 960, 720, EVENT.series, { font: 'head', size: 36, weight: '500', color: CSS.navy, spacing: 3 }).setAlpha(0);
     this.tweens.add({ targets: series, alpha: 1, y: 690, duration: 700, delay: 1500, ease: 'Cubic.easeOut' });
 
-    const rule = this.add.rectangle(960, 740, 640, 4, COLORS.red).setScale(0, 1);
+    const rule = ornament(this, 960, 745, 680).setScale(0, 1);
     this.tweens.add({ targets: rule, scaleX: 1, duration: 600, delay: 2100, ease: 'Cubic.easeOut' });
+
+    // Gold glints around the logo ring, and a golden light behind the title.
+    this.time.delayedCall(1200, () => twinkleStars(this, { x: 640, y: 80, w: 640, h: 560, every: 220, size: 0.4 }));
+    lightSweep(this, 960, 865, 1300, { every: 4200, delay: 3300, scaleY: 0.9, alpha: 0.75 });
 
     // Only the short title here; the full tagline is saved for the reveal.
     const title = addText(this, 960, 865, '', { font: 'head', size: 110, weight: 'bold', color: CSS.red, spacing: 6 });

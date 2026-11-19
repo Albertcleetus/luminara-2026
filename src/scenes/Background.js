@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS } from '../theme.js';
-import { addText, brackets } from '../ui.js';
+import { addText, brackets, circuitTraces, goldFrame, mirrorPaths, twinkleStars } from '../ui.js';
 import { music } from '../audio.js';
 
 const FLOW = ['Attract', 'Intro', 'Honeycomb', 'Reveal'];
@@ -32,17 +32,38 @@ export class Background extends Scene {
       this.tweens.add({ targets: c, y: y + 18, duration: 3000 + i * 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
 
-    // Light tech floaters.
+    // Soft golden bokeh drifting up, like light in a ceremony hall.
+    this.add.particles(0, 0, 'glow', {
+      x: { min: 0, max: 1920 }, y: { min: 200, max: 1150 },
+      speedY: { min: -8, max: -22 }, speedX: { min: -6, max: 6 }, lifespan: 9000,
+      scale: { start: 0.08, end: 0.22 }, alpha: { onEmit: () => 0, onUpdate: (p, key, t) => Math.sin(t * Math.PI) * 0.5 },
+      tint: [COLORS.gold, COLORS.goldLight, 0xffc0a0], frequency: 380
+    });
+
+    // Light floaters (a few tech-teal ones stay for the tech blend).
     this.add.particles(0, 0, 'spark', {
       x: { min: 0, max: 1920 }, y: { min: 0, max: 1080 },
       speedY: { min: -10, max: -35 }, lifespan: 6000,
       scale: { start: 0.22, end: 0 }, alpha: { start: 0.6, end: 0 },
-      tint: [COLORS.tech, COLORS.red, COLORS.orange], frequency: 160
+      tint: [COLORS.gold, COLORS.tech, COLORS.red, COLORS.orange], frequency: 160
     });
 
-    // Thin HUD frame.
+    // Gold glints twinkling around the edges.
+    twinkleStars(this, { every: 700, size: 0.28 });
+
+    // Fine gold frame with diamond corners, plus the tech corner brackets.
     const g = this.add.graphics();
-    brackets(g, 28, 28, 1864, 1024, 60, 3, COLORS.navy, 0.35);
+    goldFrame(g, 22, 22, 1876, 1036, { alpha: 0.55 });
+    brackets(g, 40, 40, 1840, 1000, 46, 3, COLORS.navy, 0.25);
+    // Faint circuit traces in the corners (subtle tech feel on every page).
+    const corner = [
+      [[40, 230], [130, 230], [180, 180], [330, 180]],
+      [[40, 290], [210, 290], [240, 260]],
+      [[40, 860], [150, 860], [200, 910], [380, 910]],
+      [[40, 960], [260, 960], [300, 1000], [420, 1000]]
+    ];
+    circuitTraces(this, [...corner, ...mirrorPaths(corner)], { alpha: 0.2, drawIn: 2000, pulseEvery: 1400, depth: 1 });
+
     addText(this, 52, 1030, 'NIMIT · LUMINARA ’26', { font: 'mono', size: 16, color: CSS.grey }).setOrigin(0, 0.5);
 
     this.input.keyboard.on('keydown-R', () => this.resetFlow());

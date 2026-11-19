@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { COLORS, CSS, EVENT, KEYWORDS, toCss } from '../theme.js';
-import { addLogo, addText, brackets, chamferPoints, fitFontSize, hexPoints, makeRings, polar, scramble, strokeArc } from '../ui.js';
+import { addLogo, addText, brackets, chamferPoints, fitFontSize, glintBurst, goldFrame, hexPoints, lightSweep, makeRings, ornament, polar, scramble, strokeArc } from '../ui.js';
 import { music, sfx } from '../audio.js';
 
 const R = 150;                       // hex radius (centre to corner)
@@ -11,7 +11,6 @@ const ANGLES = [-90, -30, 30, 90, 150, 210]; // clockwise from the top
 
 // ---- Timing of one card reveal (about 10 seconds in total) ----
 const BUILD = 1300;   // drum roll + charge-up before the hit
-const BUILD_LAST = 2400; // the 6th card gets a longer, more dramatic build-up
 const HOLD = 7000;    // keyword popup closes by itself after this
 const SKIP_AFTER = 1500; // once the keyword has landed, a tap anywhere closes the popup
 // The next tile lights up the moment the popup closes. Space / → also skips.
@@ -39,7 +38,9 @@ export class Honeycomb extends Phaser.Scene {
     music.setLevel(3);
     this.cameras.main.fadeIn(400, 251, 246, 242);
 
+    lightSweep(this, 960, 80, 900, { every: 6000, delay: 1500, scaleY: 0.45, alpha: 0.7 });
     addText(this, 960, 80, EVENT.subtitle, { font: 'head', size: 46, weight: 'bold', color: CSS.red, spacing: 8 });
+    ornament(this, 960, 122, 520, { alpha: 0.9 });
 
     this.buildLeftPanel();
     this.buildRightPanel();
@@ -87,6 +88,7 @@ export class Honeycomb extends Phaser.Scene {
 
   buildLeftPanel() {
     const g = this.add.graphics();
+    goldFrame(g, 120, 340, 360, 450, { alpha: 0.45, gap: 6 });
     brackets(g, 110, 330, 380, 470, 28, 3, COLORS.navy, 0.35);
     addLogo(this, 300, 445, 0.9);
     addText(this, 300, 575, 'LECTURE SERIES', { font: 'mono', size: 18, color: CSS.grey, spacing: 3 });
@@ -97,6 +99,7 @@ export class Honeycomb extends Phaser.Scene {
 
   buildRightPanel() {
     const g = this.add.graphics();
+    goldFrame(g, 1440, 340, 360, 450, { alpha: 0.45, gap: 6 });
     brackets(g, 1430, 330, 380, 470, 28, 3, COLORS.navy, 0.35);
     addText(this, 1620, 400, 'KEYWORDS UNLOCKED', { font: 'mono', size: 20, color: CSS.grey, spacing: 3 });
     this.countText = addText(this, 1620, 500, '0 / 6', { font: 'head', size: 120, weight: 'bold', color: CSS.red });
@@ -155,8 +158,11 @@ export class Honeycomb extends Phaser.Scene {
       g.fillPoints(pts, true);
       g.lineStyle(5, 0xffffff, 1);
       g.strokePoints(pts, true);
-      g.lineStyle(2, 0xffffff, 0.35);
-      g.strokePoints(hexPoints(R - 16), true);
+      // Ceremonial gold rim inside the white edge.
+      g.lineStyle(3, COLORS.goldLight, 0.95);
+      g.strokePoints(hexPoints(R - 12), true);
+      g.lineStyle(1.5, 0xffffff, 0.4);
+      g.strokePoints(hexPoints(R - 20), true);
     } else if (t.state === 'active') {
       g.fillStyle(0xffffff, 0.94);
       g.fillPoints(pts, true);
@@ -229,56 +235,64 @@ export class Honeycomb extends Phaser.Scene {
     t.ping.setAlpha(0);
     t.c.setScale(1);
 
-    // The 6th card is special: longer build with a heartbeat, music almost silent, bigger hit.
+    // The 6th card uses the same sound as the others; it just looks a little
+    // more celebratory, with smooth, bouncy motion instead of shaking.
     const last = t.i === KEYWORDS.length - 1;
-    const build = last ? BUILD_LAST : BUILD;
+    const build = BUILD;
 
-    // 1) Build-up: the tile charges with light and trembles.
-    if (last) {
-      music.duck(0.03, build / 1000 + 0.3, 3);
-      sfx.buildupFinal(build / 1000);
-      // Every revealed tile pulses with anticipation.
-      this.tiles.filter((o) => o.state === 'revealed').forEach((o, k) => {
-        this.tweens.add({ targets: o.c, scale: 1.06, duration: 260, delay: k * 80, yoyo: true, repeat: Math.floor(build / 520) - 1 });
-      });
-    } else {
-      music.duck(0.15, build / 1000 + 0.5, 2.5);
-      sfx.buildup(build / 1000);
-    }
+    // 1) Build-up: the tile charges with light.
+    // Music stays low until the hit has faded, so the two don't mix.
+    music.duck(0.12, build / 1000 + 2.8, 2);
+    sfx.buildup(build / 1000);
     t.glow.setTint(t.kw.color).setAlpha(0.3).setScale(2.4);
-    this.tweens.add({ targets: t.glow, alpha: 1, scale: last ? 5 : 4, duration: build, ease: 'Cubic.easeIn' });
-    this.tweens.add({ targets: t.c, scale: last ? 1.2 : 1.14, duration: build, ease: 'Cubic.easeIn' });
-    this.tweens.add({ targets: this.centerGlow, alpha: last ? 0.7 : 0.35, duration: build });
-    let elapsed = 0;
-    const tremble = this.time.addEvent({
-      delay: 30, loop: true,
-      callback: () => {
-        elapsed += 30;
-        const amp = 1 + (elapsed / build) * (last ? 14 : 9);
-        t.c.x = t.x + (Math.random() - 0.5) * amp;
-        t.c.y = t.y + (Math.random() - 0.5) * amp;
-      }
-    });
+    this.tweens.add({ targets: t.glow, alpha: 1, scale: last ? 4.6 : 4, duration: build, ease: 'Cubic.easeIn' });
+    this.tweens.add({ targets: this.centerGlow, alpha: last ? 0.5 : 0.35, duration: build });
+    let tremble = null;
+    if (last) {
+      // Smooth anticipation: a slow wind-up (slight shrink and turn), no shaking.
+      this.tweens.add({ targets: t.c, scale: 0.9, angle: -4, duration: build, ease: 'Sine.easeInOut' });
+    } else {
+      this.tweens.add({ targets: t.c, scale: 1.14, duration: build, ease: 'Cubic.easeIn' });
+      let elapsed = 0;
+      tremble = this.time.addEvent({
+        delay: 30, loop: true,
+        callback: () => {
+          elapsed += 30;
+          const amp = 1 + (elapsed / build) * 9;
+          t.c.x = t.x + (Math.random() - 0.5) * amp;
+          t.c.y = t.y + (Math.random() - 0.5) * amp;
+        }
+      });
+    }
 
     // 2) The hit.
     this.time.delayedCall(build, () => {
-      tremble.remove();
+      if (tremble) tremble.remove();
       t.c.setPosition(t.x, t.y);
+      sfx.hit(t.i);
       if (last) {
-        sfx.finalHit();
-        this.cameras.main.shake(450, 0.012);
+        // Juicy pop: springs out big and settles with a bounce.
+        this.tweens.killTweensOf(t.c);
+        t.c.setAngle(0).setScale(1.32);
+        this.tweens.add({ targets: t.c, scale: 1, duration: 900, ease: 'Elastic.easeOut', easeParams: [1.1, 0.5] });
         this.shockwave(t.x, t.y, COLORS.gold);
-        this.time.delayedCall(140, () => this.shockwave(t.x, t.y, t.kw.color));
-        this.burster.explode(140, t.x, t.y);
+        this.time.delayedCall(160, () => this.shockwave(t.x, t.y, t.kw.color));
+        this.burster.explode(110, t.x, t.y);
+        glintBurst(this, t.x, t.y, { count: 14, radius: 220, size: 0.65 });
+        // A celebration wave rolls around the other five tiles.
+        this.tiles.filter((o) => o !== t).forEach((o, k) => {
+          this.tweens.add({ targets: o.c, scale: 1.08, duration: 180, delay: 120 + k * 90, yoyo: true, ease: 'Sine.easeOut' });
+          this.time.delayedCall(120 + k * 90, () => glintBurst(this, o.x, o.y, { count: 3, radius: 120, size: 0.4 }));
+        });
       } else {
-        sfx.hit(t.i);
         this.cameras.main.shake(260, 0.007);
         this.shockwave(t.x, t.y, t.kw.color);
         this.burster.explode(70, t.x, t.y);
+        glintBurst(this, t.x, t.y, { count: 8, radius: 175, size: 0.5 });
       }
       music.setLevel(Math.min(6, 3 + this.count + 1));
-      this.flash.setAlpha(last ? 0.85 : 0.65);
-      this.tweens.add({ targets: this.flash, alpha: 0, duration: last ? 500 : 350 });
+      this.flash.setAlpha(last ? 0.45 : 0.65);
+      this.tweens.add({ targets: this.flash, alpha: 0, duration: last ? 600 : 350 });
       this.tweens.add({ targets: this.centerGlow, alpha: 0, duration: 600 });
 
       t.state = 'revealed';
@@ -287,7 +301,7 @@ export class Honeycomb extends Phaser.Scene {
       t.status.setText('UNLOCKED').setColor(CSS.white).setAlpha(0.8);
       scramble(this, t.word, t.kw.word, { duration: 350 });
       this.tweens.add({ targets: t.glow, alpha: 0.5, scale: 2.8, duration: 800 });
-      this.tweens.add({ targets: t.c, scale: 1, duration: 500, ease: 'Back.easeOut' });
+      if (!last) this.tweens.add({ targets: t.c, scale: 1, duration: 500, ease: 'Back.easeOut' });
 
       this.time.delayedCall(150, () => this.openPopup(t));
     });
@@ -318,6 +332,9 @@ export class Honeycomb extends Phaser.Scene {
     g.lineStyle(4, color, 1);
     g.strokePoints(chamferPoints(-W / 2, -H / 2, W, H, 36), true);
     brackets(g, -W / 2 - 14, -H / 2 - 14, W + 28, H + 28, 40, 3, color, 0.8);
+    // Fine gold inner border for a certificate-like, ceremonial card.
+    g.lineStyle(2, COLORS.goldLine, 0.7);
+    g.strokePoints(chamferPoints(-W / 2 + 14, -H / 2 + 14, W - 28, H - 28, 28), true);
     g.lineStyle(1, color, 0.3);
     g.lineBetween(-W / 2 + 40, -H / 2 + 70, W / 2 - 40, -H / 2 + 70);
 
@@ -450,6 +467,7 @@ export class Honeycomb extends Phaser.Scene {
     music.setLevel(6);
     this.drawCenter();
     this.burster.explode(70, CX, CY);
+    glintBurst(this, CX, CY, { count: 10, radius: 190, size: 0.55 });
     this.shockwave(CX, CY, COLORS.gold);
     this.tiles.forEach((t, k) => this.tweens.add({ targets: t.c, scale: 1.07, duration: 150, delay: k * 60, yoyo: true }));
 
@@ -476,7 +494,7 @@ export class Honeycomb extends Phaser.Scene {
 
   illuminate() {
     this.state = 'done';
-    const RISE = 2400;
+    const RISE = 4250; // matches the recorded final build-up
     music.stop(0.25);
     sfx.megaRiser(RISE / 1000);
     this.hint.setText('');
@@ -484,31 +502,54 @@ export class Honeycomb extends Phaser.Scene {
     this.center.spin.timeScale = 12;
     this.rings.tweens.forEach((tw) => { tw.timeScale = 10; });
 
-    // Beams of light from every tile into the centre, flickering faster and faster.
+    // Beams of light from every tile into the centre fade in smoothly.
     const b = this.beams;
     this.tiles.forEach((t) => {
-      b.lineStyle(10, t.kw.color, 0.9);
+      b.lineStyle(6, t.kw.color, 0.55);
       b.lineBetween(t.x, t.y, CX, CY);
     });
     b.setAlpha(0);
-    this.tweens.add({ targets: b, alpha: 1, duration: 90, yoyo: true, repeat: 6, onComplete: () => b.setAlpha(1) });
+    this.tweens.add({ targets: b, alpha: 1, duration: 900, ease: 'Sine.easeInOut' });
+
+    // Comets of light (like a particle stream) fly from each tile into the centre,
+    // faster and faster.
+    const trail = (tint) => this.add.particles(0, 0, 'spark', {
+      speed: { min: 5, max: 30 }, lifespan: 420, frequency: 14,
+      scale: { start: 0.55, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [tint, 0xffffff], emitting: false
+    }).setDepth(6);
+    const comet = (t, dur) => {
+      const head = this.add.image(t.x, t.y, 'spark').setTint(t.kw.color).setScale(0.6).setDepth(7);
+      const em = trail(t.kw.color);
+      em.startFollow(head);
+      em.start();
+      this.tweens.add({
+        targets: head, x: CX, y: CY, duration: dur, ease: 'Sine.easeIn',
+        onComplete: () => { head.destroy(); em.stop(); this.time.delayedCall(500, () => em.destroy()); }
+      });
+    };
+    let at = 200;
+    let gap = 700;
+    while (at < RISE - 500) {
+      const when = at;
+      const dur = Math.max(320, gap * 0.9);
+      this.tiles.forEach((t, k) => this.time.delayedCall(when + k * 40, () => comet(t, dur)));
+      at += gap;
+      gap = Math.max(260, gap * 0.78);
+    }
 
     this.tiles.forEach((t) => {
-      this.tweens.add({ targets: t.c, x: CX + (t.x - CX) * 0.55, y: CY + (t.y - CY) * 0.55, scale: 0.75, duration: RISE, ease: 'Cubic.easeIn' });
+      this.tweens.add({ targets: t.c, x: CX + (t.x - CX) * 0.55, y: CY + (t.y - CY) * 0.55, scale: 0.75, duration: RISE, ease: 'Sine.easeInOut' });
     });
-    this.tweens.add({ targets: this.center.c, scale: 1.3, duration: RISE, ease: 'Cubic.easeIn' });
+    this.tweens.add({ targets: this.center.c, scale: 1.3, duration: RISE, ease: 'Sine.easeInOut' });
     this.tweens.add({ targets: this.centerGlow, scale: 18, alpha: 1, duration: RISE + 200, ease: 'Cubic.easeIn' });
-    this.tweens.add({ targets: this.cameras.main, zoom: 1.12, duration: RISE, ease: 'Cubic.easeIn' });
+    this.tweens.add({ targets: this.cameras.main, zoom: 1.1, duration: RISE, ease: 'Sine.easeInOut' });
 
-    // Rumble that grows with the riser.
-    let el = 0;
-    this.time.addEvent({
-      delay: 400, repeat: Math.floor(RISE / 400) - 1,
-      callback: () => { el += 400; this.cameras.main.shake(380, 0.001 + (el / RISE) * 0.006); }
-    });
+    // Horizontal golden light streak opening across the screen, into the white flash.
+    const streak = this.add.image(CX, CY, 'glow').setTint(COLORS.goldLight).setScale(0.5, 0.06).setAlpha(0).setDepth(999);
+    this.tweens.add({ targets: streak, alpha: 1, scaleX: 16, scaleY: 0.12, duration: 700, delay: RISE - 900, ease: 'Cubic.easeIn' });
 
     this.tweens.add({
-      targets: this.flash, alpha: 1, duration: 500, delay: RISE - 400,
+      targets: this.flash, alpha: 1, duration: 500, delay: RISE - 400, ease: 'Sine.easeIn',
       onComplete: () => {
         sfx.boom();
         this.scene.start('Reveal');

@@ -7,6 +7,8 @@ export const COLORS = {
   tech: 0x18b5c8, // tech accent (bright teal)
   orange: 0xf39200,
   gold: 0xf5b400,
+  goldLine: 0xc29a3e, // antique gold for ceremonial lines and frames (reads well on cream)
+  goldLight: 0xffe7a3,
   white: 0xffffff,
   cream: 0xfbf6f2,
   line: 0x9aa6c0
@@ -19,6 +21,7 @@ export const CSS = {
   tech: '#18B5C8',
   orange: '#F39200',
   gold: '#F5B400',
+  goldLine: '#B8892B',
   grey: '#8A8FA8',
   ink: '#33384D',
   white: '#FFFFFF',

@@ -5,6 +5,10 @@ import { Attract } from './scenes/Attract.js';
 import { Intro } from './scenes/Intro.js';
 import { Honeycomb } from './scenes/Honeycomb.js';
 import { Reveal } from './scenes/Reveal.js';
+import { preloadSamples } from './audio.js';
+
+// Start fetching the recorded sound files right away.
+preloadSamples();
 
 const config = {
   type: AUTO,

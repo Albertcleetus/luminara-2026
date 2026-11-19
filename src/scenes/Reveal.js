@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { COLORS, CSS, EVENT } from '../theme.js';
-import { addLogo, addText, makeRings } from '../ui.js';
+import { addLogo, addText, brackets, circuitTraces, dotGlobe, glintBurst, makeRings, mirrorPaths, ornament } from '../ui.js';
 import { music, sfx } from '../audio.js';
 
 const TY = 470; // title line
@@ -35,6 +35,11 @@ export class Reveal extends Scene {
     this.glow = this.add.image(960, TY, 'glow').setTint(0xffd27a).setScale(3).setAlpha(0.9);
     this.tweens.add({ targets: this.glow, scale: 8, duration: 1800, ease: 'Cubic.easeOut' });
 
+    // Holographic dot globe slowly turning behind the name (tech accent).
+    const globe = dotGlobe(this, 960, TY + 10, 330, { alpha: 0.22, speed: 0.18, dots: 1100 });
+    globe.g.setAlpha(0).setScale(0.6);
+    this.tweens.add({ targets: globe.g, alpha: 1, scale: 1, duration: 2200, delay: 600, ease: 'Cubic.easeOut' });
+
     const rings = makeRings(this, 960, TY, { radius: 560, alpha: 0 });
     this.tweens.add({ targets: rings.c, alpha: 0.6, duration: 1500, delay: 400 });
 
@@ -52,14 +57,17 @@ export class Reveal extends Scene {
       speed: { min: 150, max: 520 }, lifespan: 1000, scale: { start: 0.9, end: 0 },
       alpha: { start: 1, end: 0 }, tint: [COLORS.gold, COLORS.orange, 0xffffff], emitting: false
     });
-    const confetti = (x, a0, a1) => this.add.particles(x, 1110, 'confetti', {
-      speed: { min: 900, max: 1500 }, angle: { min: a0, max: a1 }, gravityY: 1100,
-      lifespan: 3600, rotate: { start: 0, end: 900 }, scale: { min: 0.7, max: 1.3 },
-      alpha: { start: 1, end: 0.7 }, emitting: false,
-      tint: [COLORS.red, COLORS.gold, COLORS.orange, COLORS.teal, 0x2e5aac, 0xc2185b]
-    }).setDepth(50);
-    this.confettiL = confetti(220, -82, -58);
-    this.confettiR = confetti(1700, -122, -98);
+    // Digital particles rising gently (tech feel), started at the impact.
+    this.bits = this.add.particles(0, 1100, 'pixel', {
+      x: { min: 0, max: 1920 }, speedY: { min: -40, max: -110 }, lifespan: 9000,
+      scale: { min: 0.6, max: 1.2 }, alpha: { start: 0.8, end: 0 },
+      tint: [COLORS.tech, COLORS.gold, COLORS.teal], frequency: 90, emitting: false
+    }).setDepth(44);
+    this.glitter = this.add.particles(0, -20, 'star', {
+      x: { min: 0, max: 1920 }, speedY: { min: 40, max: 110 }, speedX: { min: -15, max: 15 },
+      lifespan: 9000, scale: { min: 0.08, max: 0.2 }, rotate: { start: 0, end: 360 }, alpha: { start: 1, end: 0.2 },
+      tint: [COLORS.gold, COLORS.goldLight, 0xffffff], frequency: 140, emitting: false
+    }).setDepth(44);
 
     // Fireworks: one emitter per colour.
     this.fireworks = [COLORS.gold, COLORS.red, COLORS.orange, COLORS.teal, 0xc2185b, 0x2e5aac].map((tint) =>
@@ -69,10 +77,10 @@ export class Reveal extends Scene {
       }).setDepth(40));
 
     // Twinkling stars around the title (switched on at the impact).
-    this.twinkles = this.add.particles(0, 0, 'spark', {
+    this.twinkles = this.add.particles(0, 0, 'star', {
       x: { min: 380, max: 1540 }, y: { min: 330, max: 610 }, lifespan: 700,
-      scale: { start: 0.9, end: 0 }, alpha: { start: 1, end: 0 },
-      tint: [0xffffff, COLORS.gold], blendMode: 'ADD', frequency: 80, emitting: false
+      scale: { start: 0.55, end: 0 }, alpha: { start: 1, end: 0 }, rotate: { start: 0, end: 90 },
+      tint: [0xffffff, COLORS.gold, COLORS.goldLight], frequency: 70, emitting: false
     }).setDepth(30);
 
     // ---------- LUMINARA'26: letters slam in one by one ----------
@@ -112,6 +120,11 @@ export class Reveal extends Scene {
     cam.setZoom(1.12);
     this.tweens.add({ targets: cam, zoom: 1, duration: 3800, ease: 'Sine.easeOut' });
 
+    // Pre-drop build under the letters, ending exactly on the impact (the "drop").
+    // Recorded logo sting if available (its hit lands on the impact); otherwise the generated pre-drop.
+    this.sting = sfx.finalSting((landed + 60) / 1000);
+    const PRE_START = 300;
+    this.time.delayedCall(PRE_START, () => sfx.preDrop((landed + 60 - PRE_START) / 1000));
     this.time.delayedCall(landed + 60, () => this.impact());
     this.time.delayedCall(landed + 500, () => this.showRest());
 
@@ -130,16 +143,39 @@ export class Reveal extends Scene {
 
   // The big hit when the last letter lands.
   impact() {
-    sfx.impact();
-    music.start(7); // full celebration anthem from here on
+    if (this.sting) {
+      // The recorded sting carries the hit. The finale track starts in its quiet
+      // break under the sting's tail, and its drop lands ~4.5 s after the impact.
+      this.time.delayedCall(2500, () => music.start(7));
+    } else {
+      sfx.impact();
+      music.start(7); // full celebration anthem from here on
+    }
     this.cameras.main.shake(450, 0.012);
     const flash = this.add.rectangle(960, 540, 1920, 1080, 0xffffff).setAlpha(0.85).setDepth(900);
     this.tweens.add({ targets: flash, alpha: 0, duration: 650, onComplete: () => flash.destroy() });
     this.shockwave(0, COLORS.gold);
     this.shockwave(120, COLORS.red);
     this.burster.explode(90, 960, TY);
-    this.confettiL.explode(110);
-    this.confettiR.explode(110);
+    this.bits.start();
+
+    // Circuit traces grow in from both sides with light pulses running along them.
+    const left = [
+      [[30, 300], [120, 300], [180, 360], [250, 360]],
+      [[30, 600], [120, 600], [180, 660], [330, 660]],
+      [[30, 820], [200, 820], [260, 880], [560, 880]],
+      [[30, 960], [300, 960], [340, 1000], [600, 1000]],
+      [[260, 1050], [260, 1000]]
+    ];
+    circuitTraces(this, [...left, ...mirrorPaths(left)], { alpha: 0.45, delay: 200, drawIn: 1400, pulseEvery: 450, depth: 3 });
+
+    // A scan line passes over the name once it is complete.
+    const scan = this.add.rectangle(960, TY - 140, 1500, 3, COLORS.tech, 0.9).setDepth(26);
+    const scanGlow = this.add.image(960, TY - 140, 'glow').setTint(COLORS.tech).setScale(7, 0.18).setAlpha(0.6).setDepth(26);
+    this.tweens.add({ targets: [scan, scanGlow], y: TY + 140, duration: 900, delay: 350, ease: 'Sine.easeInOut',
+      onComplete: () => this.tweens.add({ targets: [scan, scanGlow], alpha: 0, duration: 300, onComplete: () => { scan.destroy(); scanGlow.destroy(); } }) });
+    this.glitter.start();
+    glintBurst(this, 960, TY, { count: 16, radius: 520, size: 0.8, depth: 31 });
     this.tweens.add({ targets: this.title, scale: 1.08, duration: 140, yoyo: true, ease: 'Quad.easeOut' });
 
     // Title breathes with a warm glow from now on.
@@ -201,11 +237,24 @@ export class Reveal extends Scene {
     const series = addText(this, 960, 262, EVENT.series, { font: 'head', size: 30, weight: '500', color: CSS.navy, spacing: 2 });
     rise(logo, 800, -30);
     rise(series, 1000, -20);
+    // Gold filigree divider between the series line and the name.
+    const orn = ornament(this, 960, 312, 720).setDepth(20).setScale(0, 1);
+    this.tweens.add({ targets: orn, scaleX: 1, duration: 800, delay: 1100, ease: "Cubic.easeOut" });
 
     // Accreditation badges pop in.
     const naac = this.add.image(815, 905, 'naac').setDisplaySize(270, 270);
     const ugc = this.add.image(1100, 900, 'ugc').setDisplaySize(215, 215);
     [naac, ugc].forEach((img, k) => {
+      // Thin tech corner brackets around each badge.
+      const hud = this.add.graphics().setAlpha(0);
+      const bw = img.displayWidth + 30;
+      const bh = img.displayHeight + 20;
+      brackets(hud, img.x - bw / 2, img.y - bh / 2, bw, bh, 26, 3, COLORS.tech, 0.8);
+      this.tweens.add({ targets: hud, alpha: 1, duration: 500, delay: 1700 + k * 220 });
+      const halo = this.add.image(img.x, img.y, 'glow').setTint(COLORS.gold).setScale(0).setAlpha(0.55);
+      halo.setDepth(img.depth - 1);
+      this.tweens.add({ targets: halo, scale: 2.1, duration: 700, delay: 1400 + k * 220, ease: 'Back.easeOut',
+        onComplete: () => this.tweens.add({ targets: halo, alpha: 0.3, scale: 1.9, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }) });
       const sx = img.scaleX;
       const sy = img.scaleY;
       img.setScale(0).setAlpha(0);

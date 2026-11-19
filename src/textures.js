@@ -55,6 +55,38 @@ export function makeTextures(scene) {
     c.fill();
   });
 
+  // Four-point glint (ceremonial sparkle).
+  canvas('star', 96, 96, (c, w, h) => {
+    c.translate(w / 2, h / 2);
+    c.fillStyle = radial(c, 0, 0, 20, [[0, 'rgba(255,255,255,1)'], [0.5, 'rgba(255,255,255,0.5)'], [1, 'rgba(255,255,255,0)']]);
+    c.fillRect(-20, -20, 40, 40);
+    c.fillStyle = '#fff';
+    [0, Math.PI / 2].forEach((rot) => {
+      c.save();
+      c.rotate(rot);
+      c.beginPath();
+      c.moveTo(0, -46);
+      c.quadraticCurveTo(3, -3, 46, 0);
+      c.quadraticCurveTo(3, 3, 0, 46);
+      c.quadraticCurveTo(-3, 3, -46, 0);
+      c.quadraticCurveTo(-3, -3, 0, -46);
+      c.fill();
+      c.restore();
+    });
+  });
+
+  // Small square for digital particles.
+  canvas('pixel', 8, 8, (c, w, h) => {
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, w, h);
+  });
+
+  // Long thin streamer for the finale.
+  canvas('ribbon', 10, 64, (c, w, h) => {
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, w, h);
+  });
+
   canvas('confetti', 12, 22, (c, w, h) => {
     c.fillStyle = '#fff';
     c.fillRect(0, 0, w, h);
