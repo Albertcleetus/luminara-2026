@@ -295,9 +295,20 @@ export class Reveal extends Scene {
     rise(series, 1000, -20);
 
     // Accreditation badges pop in.
-    const naac = this.add.image(815, 935, 'naac').setDisplaySize(270, 270);
+    // Both badges share one centre line, the same visible height (BH) and an even gap.
+    // Measured visible areas: NAAC shield y 36-371 of 500 (caption below is cropped off),
+    // UGC y 10-191 of 200. Each pivots on the centre of its visible part.
+    const BH = 210;
+    const BY = 905;
+    const nS = BH / 335;
+    const uS = BH / 181;
+    const nW = 401 * nS;
+    const uW = 186 * uS;
+    const GAP = 70;
+    const left = 960 - (nW + GAP + uW) / 2;
+    const naac = this.add.image(left + nW / 2, BY, 'naac').setOrigin(0.5, 203.5 / 500).setScale(nS);
     naac.setCrop(0, 0, 500, 372); // shield only, without the caption text under it
-    const ugc = this.add.image(1100, 900, 'ugc').setDisplaySize(215, 215);
+    const ugc = this.add.image(left + nW + GAP + uW / 2, BY, 'ugc').setOrigin(0.5, 100.5 / 200).setScale(uS);
     [naac, ugc].forEach((img, k) => {
       const halo = this.add.image(img.x, img.y, 'glow').setTint(COLORS.gold).setScale(0).setAlpha(0.55);
       halo.setDepth(img.depth - 1);
@@ -311,9 +322,12 @@ export class Reveal extends Scene {
         onStart: () => sfx.blip(k + 4),
         onComplete: () => {
           this.burster.explode(18, img.x, img.y);
-          this.tweens.add({ targets: img, y: img.y - 8, duration: 2200 + k * 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
         }
       });
+    });
+    // Both badges float together, in step, so they always stay level.
+    this.time.delayedCall(1400 + 220 + 600, () => {
+      this.tweens.add({ targets: [naac, ugc], y: BY - 8, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
   }
 }
