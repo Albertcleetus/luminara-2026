@@ -295,15 +295,9 @@ export class Reveal extends Scene {
     rise(series, 1000, -20);
 
     // Accreditation badges pop in.
-    const naac = this.add.image(815, 905, 'naac').setDisplaySize(270, 270);
+    const naac = this.add.image(815, 935, 'naac').setDisplaySize(270, 270);
+    naac.setCrop(0, 0, 500, 372); // shield only, without the caption text under it
     const ugc = this.add.image(1100, 900, 'ugc').setDisplaySize(215, 215);
-    // The NAAC image has dark text under the shield: a soft light plate keeps it readable on the dark stage.
-    const plate = this.add.graphics().setAlpha(0).setDepth(-1); // under the badge image
-    plate.fillStyle(0xf4f1ea, 0.92);
-    plate.fillRoundedRect(815 - 118, 905 + 78, 236, 62, 14);
-    plate.lineStyle(2, COLORS.goldLine, 0.9);
-    plate.strokeRoundedRect(815 - 118, 905 + 78, 236, 62, 14);
-    this.tweens.add({ targets: plate, alpha: 1, duration: 400, delay: 1600 });
     [naac, ugc].forEach((img, k) => {
       const halo = this.add.image(img.x, img.y, 'glow').setTint(COLORS.gold).setScale(0).setAlpha(0.55);
       halo.setDepth(img.depth - 1);
